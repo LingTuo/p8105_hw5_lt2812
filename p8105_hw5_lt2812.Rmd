@@ -1,0 +1,16 @@
+---
+title: "Homework 5"
+author: Ling Tuo
+date: 11/16/2020
+output: 
+  github_document:
+    toc: true
+---
+
+This is my solution to HW5. 
+
+```{r setup, include = FALSE}
+library(tidyverse)
+```
+
+## Problem 1
