@@ -11,6 +11,95 @@ This is my solution to HW5.
 
 ```{r setup, include = FALSE}
 library(tidyverse)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d()
+scale_fill_discrete = scale_fill_viridis_d()
 ```
 
 ## Problem 1
+
+Load the dataset.
+
+```{r include = FALSE}
+raw_df = read_csv("data/homicide-data.csv")
+```
+
+This dataset contains `r nrow(raw_df)` rows and `r ncol(raw_df)` columns.
+
+The data contains the location of the killing, whether an arrest was made, basic demographic information of each victim. There are victim info variables -- victim_last, victim_first, victim_race, victim_age and victim_sex, location variables -- city, state, lat and lon, and case info -- uid, reported_date and disposition.
+
+```{r echo = FALSE, message = FALSE}
+homicide_df = 
+  raw_df %>% 
+  mutate(
+    city_state = str_c(city, state, sep = "_"),
+    resolved = case_when(
+      disposition == "Closed without arrest" ~ "unsolved",
+      disposition == "Open/No arrest" ~ "unsolved",
+      disposition == "Closed by arrest" ~ "solved"
+    )
+  ) %>% 
+  select(city_state, resolved) %>% 
+  filter(city_state != "Tulsa_AL")
+```
+
+```{r echo = FALSE, message = FALSE}
+aggregate_df = 
+  homicide_df %>% 
+  group_by(city_state) %>% 
+  summarise(
+    hom_total = n(),
+    hom_unsolved = sum(resolved == "unsolved")
+  )
+```
+
+Prop test for a single city -- Baltimore.
+
+```{r}
+prop.test(
+  aggregate_df %>% filter(city_state == "Baltimore_MD") %>% pull(hom_unsolved), 
+  aggregate_df %>% filter(city_state == "Baltimore_MD") %>% pull(hom_total)) %>% 
+  broom::tidy() %>% 
+  select(estimate, conf.low, conf.high)
+```
+
+Iterate the prop test.
+
+```{r}
+results_df = 
+  aggregate_df %>% 
+  mutate(
+    prop_tests = map2(.x = hom_unsolved, .y = hom_total, ~prop.test(x = .x, n = .y)),
+    tidy_tests = map(.x = prop_tests, ~broom::tidy(.x))
+  ) %>% 
+  select(-prop_tests) %>% 
+  unnest(tidy_tests) %>% 
+  select(city_state, estimate, conf.low, conf.high)
+```
+
+Make a plot of the estimate proportions and CIs for each city.
+
+```{r}
+results_df %>%
+  mutate(city_state = fct_reorder(city_state, estimate)) %>% 
+  ggplot(aes(x = city_state, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+
