@@ -11,6 +11,7 @@ This is my solution to HW5.
 
 ```{r setup, include = FALSE}
 library(tidyverse)
+library(ggplot2)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -104,14 +105,42 @@ results_df %>%
 
 ## Problem 2
 
-Import datasets.
+Import datasets and add observations, id and group of each subjects as variables.
 
-```{r}
+```{r message = FALSE}
 path_df = 
   tibble(
-    path = list.files("data/p2_data")
+    path = list.files("data/p2_data"),
+    id = substr(path, 1, 6)
     ) %>% 
   mutate(
-    path = str_c("data/p2_data/", path))
+    path = str_c("data/p2_data/", path),
+    data = map(path, read_csv)
+    ) %>% 
+  unnest(data) %>% 
+  separate(id, into = c("group", "id"), sep = "_" ) %>% 
+  relocate(id, group)
+```
+
+Then, tidy the dataframe.
+
+```{r}
+tidy_df = 
+  path_df %>% 
+  select(-path) %>% 
+  pivot_longer(week_1:week_8, names_to = "week", values_to = "observation") %>% 
+  mutate(week = substr(week, 6, 6))
+```
+
+Make a spaghetti plot of observations on each subject over time.
+
+```{r warning = FALSE}
+tidy_df %>% 
+  group_by(id, group) %>% 
+  ggplot(aes(x = week, y = observation, group = id, color = id)) + 
+  geom_point(alpha = .3, size = 0.5) +
+  geom_line() +
+  geom_smooth(method = "lm", size = 0.5, se = FALSE, lty = 2) +
+  facet_grid(. ~ group)
 ```
 
