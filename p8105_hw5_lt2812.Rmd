@@ -132,7 +132,7 @@ tidy_df =
   mutate(week = substr(week, 6, 6))
 ```
 
-Make a spaghetti plot of observations on each subject over time.
+Make a spaghetti plot of observations on each subject over time. Since the observations are difficult to track due to the large quantity, I add linear smooths lines to help looking for trends.
 
 ```{r warning = FALSE}
 tidy_df %>% 
@@ -141,6 +141,14 @@ tidy_df %>%
   geom_point(alpha = .3, size = 0.5) +
   geom_line() +
   geom_smooth(method = "lm", size = 0.5, se = FALSE, lty = 2) +
-  facet_grid(. ~ group)
+  labs(
+  title = "Observations of control and experimental arm over 8 weeks",
+  x = "ID",
+  y = "Observations") +
+  facet_grid(. ~ group) 
 ```
+
+The observations of subjects fluctuate in both within the control and experimental group, however, the general trend of experimental group is increasing over time and control group has slightly decrease.
+
+
 
