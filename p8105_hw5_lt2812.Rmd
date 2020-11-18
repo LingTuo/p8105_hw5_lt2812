@@ -180,3 +180,40 @@ sim_result =
   bind_rows()
 
 ```
+
+Repeat t-test for $\mu = 1,2,3,4,5,6$
+  
+```{r}
+sim_results = 
+  tibble(
+    mu_list = c(0, 1, 2, 3, 4, 5, 6)
+    ) %>% 
+  mutate(
+    output_lists = map(.x = mu_list, ~ rerun(5000, sim_mean_sd(mu = .x))),
+    estimate_df = map(output_lists, bind_rows)
+    ) %>% 
+  select(-output_lists) %>% 
+  unnest(estimate_df) %>% 
+  group_by(mu_list)
+```
+
+Now, make a plot of the proportion of times the null was rejected and the true value of $\mu$.
+
+```{r}
+plot_prop = 
+  sim_results  %>% 
+  filter(p.value < 0.05) %>% 
+  count(mu_list) %>% 
+  mutate(prop_rej = n/5000) %>% 
+  ggplot(aes(x = mu_list, y = prop_rej)) + 
+  geom_point(alpha = .5) +
+  geom_line(alpha = .5) +
+  labs(
+    title = "Association between effect size(mu) and power of the t-test(proportion of rejection)",
+    x = "True mean/mu",
+    y = "Proportion of times the null was rejected")
+
+plot_prop
+```
+
+With the true mean increases, the proportion of times the null hypothesis was rejected increases as well, i.e. the power of the test is positively associated with the effect size. Besides, when the difference between true mean and null is large enough, the growth rate of proportion(power) slowed down and get closer to 1.
