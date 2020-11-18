@@ -102,4 +102,16 @@ results_df %>%
 ```
 
 
+## Problem 2
+
+Import datasets.
+
+```{r}
+path_df = 
+  tibble(
+    path = list.files("data/p2_data")
+    ) %>% 
+  mutate(
+    path = str_c("data/p2_data/", path))
+```
 
